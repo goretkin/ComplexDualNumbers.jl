@@ -1,23 +1,23 @@
-module DualNumbers
+module ComplexDualNumbers
   importall Base
 
   import NaNMath
   import Calculus
 
-  include("dual.jl")
+  include("complexdual.jl")
 
   export
-    Dual,
-    Dual128,
-    Dual64,
-    DualPair,
-    dual,
-    dual128,
-    dual64,
-    isdual,
-    dual_show,
+    ComplexDual,
+    ComplexDual128,
+    ComplexDual64,
+    ComplexDualPair,
+    complexdual,
+    complexdual128,
+    complexdual64,
+    iscomplexdual,
+    complexdual_show,
     epsilon,
-    conjdual,
-    absdual,
-    abs2dual
+    conjcomplexdual,
+    abscomplexdual,
+    abs2complexdual
 end
