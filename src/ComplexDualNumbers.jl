@@ -4,19 +4,23 @@ module ComplexDualNumbers
   import NaNMath
   import Calculus
 
+  importall DualNumbers
   include("complexdual.jl")
 
   export
     ComplexDual,
+    ComplexDual256,
     ComplexDual128,
-    ComplexDual64,
     ComplexDualPair,
     complexdual,
+    complexdual256,
     complexdual128,
-    complexdual64,
     iscomplexdual,
     complexdual_show,
     epsilon,
+    imagepsilon,
+    imagfull,
+    epsfull,
     conjcomplexdual,
     abscomplexdual,
     abs2complexdual
