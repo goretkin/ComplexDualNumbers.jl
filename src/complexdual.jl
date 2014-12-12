@@ -18,8 +18,16 @@ epsilon(z::ComplexDual) = z.du
 imag(z::ComplexDual) = z.im
 imagepsilon(z::ComplexDual)= z.imdu
 
-imagfull(z::ComplexDual)= Dual(imag(z),imagepsilon(z)) #not sure about this
-epsfull(z::ComplexDual)= Complex(epsilon(z),imagepsilon(z)) #not sure about this
+imagfull(z::ComplexDual)= Dual(imag(z),imagepsilon(z))      #not sure this is useful
+epsfull(z::ComplexDual)= Complex(epsilon(z),imagepsilon(z)) #not sure this is useful
+
+complexpart(z::ComplexDual) = Complex(real(z),imag(z))
+dualpart(z::ComplexDual) =Dual(real(z),eps(z))
+
+
+@vectorize_1arg ComplexDual complexpart
+@vectorize_1arg ComplexDual dualpart
+
 
 #eps(z::ComplexDual) = eps(real(z))
 #eps{T}(::Type{ComplexDual{T}}) = eps(T)
@@ -44,7 +52,14 @@ convert{T<:Real}(::Type{ComplexDual{T}}, z::ComplexDual) =
   ComplexDual(convert(T, real(z)), convert(T, epsilon(z)), convert(T,imag(z)), convert(T,imagepsilon(z)))
 
 convert{T<:Real}(::Type{T}, z::ComplexDual) =
-  ((epsilon(z)==0 && imag(z)==0 && imagepsilon==0) ? convert(T, real(z)) : throw(InexactError()))
+  ((epsilon(z)==0 && imag(z)==0 && imagepsilon(z)==0) ? convert(T, real(z)) : throw(InexactError()))
+
+convert{T<:Real}(::Type{Dual{T}}, z::ComplexDual) =
+  ((imag(z)==0 && imagepsilon(z)==0) ? Dual(convert(T, real(z)), convert(T, epsilon(z)))  : throw(InexactError()))
+
+convert{T<:Real}(::Type{Complex{T}}, z::ComplexDual) =
+  ((epsilon(z)==0 && imagepsilon(z)==0) ? Complex(convert(T, real(z)), convert(T, imag(z)))  : throw(InexactError()))
+
 
 promote_rule{T<:Real, S<:Real}(::Type{ComplexDual{T}}, ::Type{ComplexDual{S}}) =
     ComplexDual{promote_type(T, S)}
@@ -71,6 +86,9 @@ promote_rule{T<:Real, S<:Real}(::Type{Dual{T}}, ::Type{S}) =
 
 complexdual(x, y, z, w) = ComplexDual(x, y, z, w)
 complexdual(x) = ComplexDual(x)
+@vectorize_1arg Number complexdual
+
+
 
 @vectorize_1arg Real complexdual
 #@vectorize_2arg Real complexdual
@@ -93,7 +111,28 @@ flatten(z::ComplexDual) = (real(z), epsilon(z), imag(z), imagepsilon(z))
 
 function complexdual_show(io::IO, z::ComplexDual, compact::Bool)
     x, y, z, w = flatten(z)
-    print(io, "complexdual($x, $y, $z, $w)")
+    if isnan(x) || isfinite(y) || isfinite(z) || isfinite(w)
+        compact ? showcompact(io,x) : show(io,x)
+
+        for (a,sym) in [(y,"du"), (z, "im"), (w, "imdu")] 
+            if signbit(a)==1 && !isnan(a)
+                a = -a
+                print(io, compact ? "-" : " - ")
+            else
+                print(io, compact ? "+" : " + ")
+            end
+            compact ? showcompact(io, a) : show(io, a)
+            if !(isa(a,Integer) || isa(a,Rational) ||
+                 isa(a,FloatingPoint) && isfinite(a))
+                print(io, "*")
+            end
+            print(io, sym)
+        end
+
+
+    else
+        print(io, "complexdual(", x, ",", y, ",", z, ",", w, ")")
+    end
 end
 show(io::IO, z::ComplexDual) = complexdual_show(io, z, false)
 showcompact(io::IO, z::ComplexDual) = complexdual_show(io, z, true)
@@ -142,8 +181,11 @@ hash(z::Dual) =
 =#
 
 conj(z::ComplexDual) = ComplexDual(real(z), epsilon(z), -imag(z), -imagepsilon(z) )
-abs(z::ComplexDual)  = abs(imagfull(z))
-abs2(z::ComplexDual) = abs2(imagfull(z))
+abs(z::ComplexDual)  = abs(sqrt(abs2(z)))
+abs2(z::ComplexDual) = dualpart(z*conj(z)) #imaginary part is zero after taking norm^2
+@vectorize_1arg ComplexDual conj
+@vectorize_1arg ComplexDual abs
+@vectorize_1arg ComplexDual abs2
 
 #= don't understand
 # algebraic definitions
