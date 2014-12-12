@@ -4,6 +4,7 @@ Is a four-dimensional algebra over Real numbers of the form
 `a + b*ϵ + c*i + d*ϵi`
 
 ComplexDual multiplication inherits from the Complex and Dual multiplication
+
 |    | 1  | ϵ  | i  | ϵi |
 |----|----|----|----|----|
 | 1  | 1  | ϵ  | i  | ϵi |
@@ -15,4 +16,4 @@ A ComplexDual number can be interpreted as a Complex number over Dual numbers or
 
 There is some trouble in defining where in the type hierarchy `ComplexDual` goes. It should behave exactly like a `Complex` number, just as `Dual` behaves exactly like `Real`, but it is _not_ a `Complex` just like `Dual` is not a `Real`.
 
-For example, a function of a `z::Complex{T<:Real}` might do something like `d = real(z)^2 + imag(z)^2`
+For example, a function of a `z::Complex{T<:Real}` might do something like `d = real(z)^2 + imag(z)^2` and expect `d` to be `Real`. If `z` is instead a `ComplexDual`, there is trouble in defining `real` and `imag`. Either those operation discards any "dual information" and return `Real` numbers (as a user of `Complex` would expect), or they return `Dual` numbers.
