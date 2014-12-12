@@ -23,5 +23,7 @@ module ComplexDualNumbers
     epsfull,
     conjcomplexdual,
     abscomplexdual,
-    abs2complexdual
+    abs2complexdual,
+    dual_over_complex,
+    complex_over_dual
 end

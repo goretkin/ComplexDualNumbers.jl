@@ -5,6 +5,11 @@ immutable ComplexDual{T<:Real} <: Number
     imdu::T
 end
 
+#three different interpretations of a ComplexDual
+#z = a + b*eps + c*im + d*im*eps
+#z = (a + b*eps) + (c + d*eps)*im
+#z = (a + c*im) + (b + d*im)*eps
+
 ComplexDual(x::Real, y::Real, z::Real, w::Real) = ComplexDual(promote(x,y,z,w)...)
 ComplexDual{T<:Real}(x::T) = ComplexDual(x, zero(T),zero(T),zero(T))
 ComplexDual{T}(x::Complex{T}) = ComplexDual(real(x), zero(T),imag(x),zero(T))
@@ -18,16 +23,21 @@ epsilon(z::ComplexDual) = z.du
 imag(z::ComplexDual) = z.im
 imagepsilon(z::ComplexDual)= z.imdu
 
-imagfull(z::ComplexDual)= Dual(imag(z),imagepsilon(z))      #not sure this is useful
-epsfull(z::ComplexDual)= Complex(epsilon(z),imagepsilon(z)) #not sure this is useful
+
+#interpret the ComplexDual as a complex number over a field of Dual numbers
+#z = (a + b*eps) + (c + d*eps)*im
+complex_over_dual(z::ComplexDual) = (Dual(real(z), epsilon(z)) , Dual(imag(z), imagepsilon(z)) )
+
+#interpret the ComplexDual as a Dual number over a field of Complex numbers
+#z = (a + c*im) + (b + d*im)*eps
+dual_over_complex(z::ComplexDual) = (Complex(real(z),imag(z)) , Complex(epsilon(z), imagepsilon(z)) )
+
 
 complexpart(z::ComplexDual) = Complex(real(z),imag(z))
-dualpart(z::ComplexDual) =Dual(real(z),eps(z))
-
+dualpart(z::ComplexDual) =Dual(real(z),epsilon(z))
 
 @vectorize_1arg ComplexDual complexpart
 @vectorize_1arg ComplexDual dualpart
-
 
 #eps(z::ComplexDual) = eps(real(z))
 #eps{T}(::Type{ComplexDual{T}}) = eps(T)
@@ -200,8 +210,6 @@ abs2dual(z::ComplexDual) = abs2(real(z))
 
 -(z::ComplexDual) = complexdual(-real(z), -epsilon(z), -imag(z), -imagepsilon(z))
 -(z::ComplexDual, w::ComplexDual) = z + (-w)
-#-(z::Number, w::ComplexDual) = z + (-w)
-#-(z::Dual, w::Number) = z + (-w)
 
 # avoid ambiguous definition with Bool*Number
 *(x::Bool, z::ComplexDual) = ifelse(x, z, ifelse(signbit(real(z))==0, zero(z), -zero(z)))
@@ -214,7 +222,7 @@ abs2dual(z::ComplexDual) = abs2(real(z))
                                                 real(a)*imagepsilon(b)  +imagepsilon(a)*real(b) +imag(a)*epsilon(b) +epsilon(a)*imag(b)
                                                 )
 
-
+#for efficiency, perhaps
 #*(x::Real, z::ComplexDual) = complexdual(x*real(z), x*epsilon(z), x*imag(z), x*imagepsilon(z))
 #*(z::ComplexDual, x::Real) = complexdual(real(z)*x, epsilon(z)*x, imag(z)*x, imagepsilon(z)*x)
 
@@ -224,8 +232,8 @@ abs2dual(z::ComplexDual) = abs2(real(z))
 /(z::Dual, x::Real) = dual(real(z)/x, epsilon(z)/x)
 =#
 
-
-/(z::ComplexDual, w::ComplexDual) = z * conj(w) / abs2(z) 
+/(a::ComplexDual, b::ComplexDual) = a*conj(b) / (abs2(b))  #abs2(b) is like b*conj(b), but returns a Dual. 
+/(a::ComplexDual, b::Dual) = a * inv(b)     #DualNumbers defines inv of a Dual
 #=
 for f in [:^, :(NaNMath.pow)]
     @eval function ($f)(z::Dual, w::Dual)
