@@ -1,91 +1,18 @@
-[![Build Status](https://travis-ci.org/JuliaDiff/DualNumbers.jl.png)](https://travis-ci.org/JuliaDiff/DualNumbers.jl)
+### A ComplexDual Number
 
-### Scope of DualNumbers.jl
+Is a four-dimensional algebra over Real numbers of the form
+`a + b*ϵ + c*i + d*ϵi`
 
-The `DualNumbers` package defines the `Dual` type to represent dual numbers and 
-supports standard mathematical operations on them. Conversions and promotions 
-are defined to allow performing operations on combinations of dual numbers with 
-predefined Julia numeric types.
+ComplexDual multiplication inherits from the Complex and Dual multiplication
+|    | 1  | ϵ  | i  | ϵi |
+|----|----|----|----|----|
+| 1  | 1  | ϵ  | i  | ϵi |
+| ϵ  | ϵ  | 0  | ϵi | 0  |
+| i  | i  | ϵi | -1 | -ϵ |
+| ϵi | ϵi | 0  | -ϵ | 0  |
 
-Dual numbers extend the real numbers, similar to complex numbers. They adjoin a 
-new element `ϵ` such that `ϵ*ϵ=0`, in a similar way that complex numbers 
-adjoin the imaginary unit `i` with the property `i*i=-1`. So the typical 
-representation of a dual number takes the form `x+y*ϵ`, where `x` and `y` are 
-real numbers.
+A ComplexDual number can be interpreted as a Complex number over Dual numbers or as a Dual number over Complex numbers. These can be thought of as `Complex{Dual}`  (instead of something like `Complex{Float}`) or as a `Dual{Complex}`. These definitions are not possible with the implementation of `Complex` or `Dual`, because they are only defined over type `Real`.
 
-Apart from their mathematical role in algebraic and differential geometry (they 
-are mainly interpreted as angles between lines), they also find applications in 
-physics (the real part of a dual represents the bosonic direction, while the 
-epsilon part represents the fermionic direction), in screw theory, in motor 
-and spatial vector algebra, and in computer science due to its relation with the 
-forward mode of automatic differentiation.
+There is some trouble in defining where in the type hierarchy `ComplexDual` goes. It should behave exactly like a `Complex` number, just as `Dual` behaves exactly like `Real`, but it is _not_ a `Complex` just like `Dual` is not a `Real`.
 
-The [ForwardDiff](https://github.com/scidom/ForwardDiff.jl) package implements forward mode automatic differentiation in Julia using several approaches. One
-of these approaches employs dual numbers. For this reason, the `ForwardDiff` package relies on `DualNumbers`. The
-user is referred to `ForwardDiff` for some examples on how to perform forward mode automatic differentiation using
-dual numbers in Julia.
-
-## Supported functions
-
-We aim for complete support for `Dual` types for numerical functions within Julia's 
-`Base`. Currently, basic mathematical operations and trigonometric functions are
-supported.
-
-
-The following functions are specific to dual numbers:
-* `dual`,
-* `dual128`,
-* `dual64`,
-* `epsilon`,
-* `isdual`,
-* `dual_show`,
-* `conjdual`,
-* `absdual`,
-* `abs2dual`.
-
-In some cases the mathematical definition of functions of ``Dual`` numbers
-is in conflict with their use as a drop-in replacement for calculating
-numerical derivatives, for example, ``conj``, ``abs`` and ``abs2``. In these
-cases, we choose to follow the rule ``f(x::Dual) = Dual(f(real(x)),epsilon(x)*f'(real(x)))``,
-where ``f'`` is the derivative of ``f``. The mathematical definitions are
-available using the functions with the suffix ``dual``.
-Similarly, comparison operators ``<``, ``>``, and ``==`` are overloaded to compare only real
-components.
-
-
-
-
-### A walk-through example
-
-The example below demonstrates basic usage of dual numbers by employing them to 
-perform automatic differentiation. The code for this example can be found in 
-`test/automatic_differentiation_test.jl`.
-
-First install the package by using the Julia package manager:
-
-    Pkg.update()
-    Pkg.add("DualNumbers")
-    
-Then make the package available via
-
-    using DualNumbers
-
-Use the `dual()` function to define the dual number `2+1*du`:
-
-    x = dual(2, 1)
-
-Define a function that will be differentiated, say
-
-    f(x) = x^3
-
-Perform automatic differentiation by passing the dual number `x` as argument to 
-`f`:
-
-    y = f(x)
-
-Use the functions `real()` and `epsilon()` to get the real and imaginary (dual) 
-parts of `x`, respectively:
-
-    println("f(x) = x^3")
-    println("f(2) = ", real(y))
-    println("f'(2) = ", epsilon(y))
+For example, a function of a `z::Complex{T<:Real}` might do something like `d = real(z)^2 + imag(z)^2`
